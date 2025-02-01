@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddytest"
@@ -66,6 +67,30 @@ func TestUnmarshalCaddyfile(t *testing.T) {
 			},
 		},
 		{
+			name: "valid tarpit responder with config",
+			input: `defender tarpit {
+				ranges openai
+				tarpit_config {
+					headers {
+						X-You-Got Played
+					}
+					duration 30s
+					response_code 404
+				}
+			}`,
+			expected: Defender{
+				RawResponder: "tarpit",
+				Ranges:       []string{"openai"},
+				TarpitConfig: responders.TarpitResponder{
+					Headers: map[string]string{
+						"X-You-Got": "Played",
+					},
+					Duration:     time.Second * 30,
+					ResponseCode: 404,
+				},
+			},
+		},
+		{
 			name: "valid predefined range key",
 			input: `defender garbage {
 				ranges cloudflare
@@ -97,6 +122,26 @@ func TestUnmarshalCaddyfile(t *testing.T) {
 				invalid 123
 			}`,
 			errContains: "unknown subdirective",
+			expectError: true,
+		},
+		{
+			name: "invalid tarpit_config duration",
+			input: `defender tarpit {
+				tarpit_config {
+					duration invalid
+				}
+			}`,
+			errContains: "invalid duration value",
+			expectError: true,
+		},
+		{
+			name: "invalid tarpit_config response_code",
+			input: `defender tarpit {
+				tarpit_config {
+					response_code invalid
+				}
+			}`,
+			errContains: "invalid syntax",
 			expectError: true,
 		},
 	}
@@ -167,6 +212,28 @@ func TestUnmarshalJSON(t *testing.T) {
 				URL:          "https://example.com",
 				Ranges:       []string{"openai"},
 				responder:    &responders.RedirectResponder{URL: "https://example.com"},
+			},
+		},
+		{
+			name:  "valid tarpit responder with tarpit_config",
+			input: `{"raw_responder":"tarpit", "tarpit_config":{"headers":{"X-You-Got": "Played"},"duration": 30, "response_code": 404},"ranges":["openai"]}`,
+			expected: Defender{
+				RawResponder: "tarpit",
+				TarpitConfig: responders.TarpitResponder{
+					Headers: map[string]string{
+						"X-You-Got": "Played",
+					},
+					Duration:     time.Second * 30,
+					ResponseCode: 404,
+				},
+				Ranges: []string{"openai"},
+				responder: &responders.TarpitResponder{
+					Headers: map[string]string{
+						"X-You-Got": "Played",
+					},
+					Duration:     time.Second * 30,
+					ResponseCode: 404,
+				},
 			},
 		},
 		{

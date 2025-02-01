@@ -1,0 +1,22 @@
+{
+	auto_https off
+	order defender after header
+	debug
+}
+
+:8080 {
+	bind 127.0.0.1 ::1
+
+	defender tarpit {
+		ranges private
+        tarpit_config {
+            headers {
+                X-You-Got Played
+            }
+            # content https://example-files.online-convert.com/document/txt/example.txt
+            content file://crack.txt
+            timeout 30s
+            bytes_per_second 24
+        }
+	}
+}
