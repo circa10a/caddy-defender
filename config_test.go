@@ -378,7 +378,6 @@ func TestValidation(t *testing.T) {
 
 		require.Equal(t, defaultRanges, def.Ranges)
 	})
-
 }
 
 func TestDefenderValidation(t *testing.T) {
